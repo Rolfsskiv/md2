@@ -5,9 +5,6 @@ $md2-datepicker-trigger-min-width: 112px !default;
 $md2-datepicker-arrow-size: 5px !default;
 $md2-datepicker-arrow-margin: 4px !default;
 $md2-datepicker-panel-max-height: 256px !default;
-$md2-datepicker-width: 330px !default;
-$md2-datepicker-height: 112px !default;
-
 
 md2-datepicker {
   display: block;
@@ -22,7 +19,6 @@ md2-datepicker {
   align-items: center;
   height: $md2-datepicker-trigger-height;
   min-width: $md2-datepicker-trigger-min-width;
-  margin: 18px 0;
   line-height: 22px;
   cursor: pointer;
   position: relative;
@@ -130,37 +126,67 @@ md2-datepicker {
   background: white;
 }
 
-md2-calendar {
-  position: relative;
-  width: $md2-datepicker-width;
-}
 
-.md2-datepicker-header {
-  width: 100%;
-  font-weight: 700;
-  display: inline-block;
-  background-color: $primary;
-  border-top-left-radius: 2px;
-  border-top-right-radius: 2px;
-  border-bottom-left-radius: 0px;
-  color: white;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.md2-datepicker-calendar {
-}
-
-
-.md2-datepicker-actions {
-  display: flex;
+md2-option {
+  white-space: nowrap;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  display: block;
   flex-direction: row;
-  justify-content: flex-end;
-  margin: 0px;
-  max-height: 48px;
-  padding: 0px;
-}
+  align-items: center;
+  padding: 13px 16px;
+  font-size: 16px;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  text-align: start;
+  text-decoration: none;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  box-sizing: padding-box;
 
+  &[aria-disabled='true'] {
+    cursor: default;
+    user-select: none;
+  }
+
+  &:hover:not(.md2-option-disabled),
+  &:focus:not(.md2-option-disabled) {
+    background: rgba(black, 0.04);
+  }
+
+  &.md2-selected {
+    color: $primary;
+  }
+
+  &.md2-option-disabled {
+    color: rgba(black, 0.38);
+  }
+
+  [multiple='true'] & {
+    padding-left: 40px;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 12px;
+      display: block;
+      width: 16px;
+      height: 16px;
+      margin-top: -8px;
+      border: 2px solid;
+      border-radius: 2px;
+      box-sizing: border-box;
+      transition: 240ms;
+    }
+
+    &.md2-selected::after {
+      transform: rotate(-45deg);
+      height: 8px;
+      border-width: 0 0 2px 2px;
+    }
+  }
+}
 
 .cdk-overlay-container, .cdk-global-overlay-wrapper {
   pointer-events: none;

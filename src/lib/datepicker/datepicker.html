@@ -1,1 +1,13 @@
-﻿<md2-calendar></md2-calendar>
+﻿<div class="md2-datepicker-trigger" cdk-overlay-origin (click)="toggle()" #origin="cdkOverlayOrigin" #trigger>
+  <span class="md2-datepicker-placeholder" [class.md2-floating-placeholder]="_value"
+        [@transformPlaceholder]="_placeholderState" [style.width.px]="_selectedValueWidth">{{ placeholder }}</span>
+  <span class="md2-datepicker-value"> {{ _value }} </span>
+  <span class="md2-datepicker-arrow"></span>
+</div>
+<template cdk-connected-overlay [origin]="origin" [open]="panelOpen" hasBackdrop (backdropClick)="close()"
+          backdropClass="cdk-overlay-transparent-backdrop">
+  <div class="md2-datepicker-panel" [@transformPanel]="'showing'" (@transformPanel.done)="_onPanelDone()"
+       (keydown)="_keyManager.onKeydown($event)" [style.transformOrigin]="_transformOrigin">
+    test
+  </div>
+</template>
