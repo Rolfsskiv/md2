@@ -7,6 +7,19 @@ $md2-datepicker-arrow-margin: 4px !default;
 $md2-datepicker-panel-max-height: 256px !default;
 
 $md2-datepicker-date-size: 40px !default;
+$md2-datepicker-calendar-height: 390px !default;
+
+@mixin md2-datepicker-base() {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  width: 100%;
+  transition: 300ms;
+
+  &.active {
+    right: 0;
+  }
+}
 
 md2-datepicker {
   position: relative;
@@ -127,8 +140,7 @@ md2-datepicker {
 
 .md2-datepicker-panel {
   box-shadow: 0 0 3px rgba(black, 0.2), 0 8px 10px 1px rgba(black, 0.14), 0 3px 14px 2px rgba(black, 0.12);
-  min-width: 112px;
-  /*max-width: 280px;*/
+  min-width: 112px !important;
   width: 310px;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
@@ -140,17 +152,71 @@ md2-datepicker {
 
 .md2-datepicker-container {
   position: relative;
-  width: 100%;
-  height: 342px;
+  height: $md2-datepicker-calendar-height;
+  margin: 0 8px;
+  font-size: 13px;
+  font-weight: 400;
   overflow: hidden;
   background: white;
 }
 
+
+
 .md2-datepicker-calendar {
-  padding: 0 8px;
-  /*padding: 0 16px;*/
-  font-size: 13px;
+  @include md2-datepicker-base();
+  position: absolute;
+  right: 100%;
+  display: block;
+  width: 100%;
+  /*font-size: 12px;
+  font-weight: 400;*/
+  transition: 300ms;
+
+  &.active {
+    right: 0;
+  }
+}
+
+.md2-calendar-years {
+  @include md2-datepicker-base();
+  height: $md2-datepicker-calendar-height;
+  margin: 10px 0;
+  line-height: 40px;
+  background: white;
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  &.active {
+    right: 0;
+  }
+
+  .md2-years-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100%;
+  }
+}
+
+.md2-calendar-year {
+  position: relative;
+  display: block;
+  margin: 0 auto;
+  padding: 0;
+  font-size: 17px;
   font-weight: 400;
+  text-align: center;
+  cursor: pointer;
+
+  &.selected {
+    color: $primary;
+    font-size: 26px;
+    font-weight: 500;
+  }
+}
+
+.md2-calendar-month {
+  @include md2-datepicker-base();
 }
 
 .md2-calendar-header {
@@ -165,7 +231,7 @@ md2-datepicker {
     width: 100%;
   }
 
-  button {
+  .md2-button {
     display: inline-block;
     width: 48px;
     height: 48px;
@@ -175,13 +241,6 @@ md2-datepicker {
     cursor: pointer;
     background: transparent;
   }
-}
-
-.md2-datepicker-calendar {
-  padding: 0 8px;
-  /*padding: 0 16px;*/
-  font-size: 13px;
-  font-weight: 400;
 }
 
 .md2-calendar-week-days {
@@ -197,7 +256,7 @@ md2-datepicker {
   text-transform: uppercase;
 }
 
-.md2-calendar-month {
+.md2-calendar-dates {
   display: block;
   /*padding: 0 16px;*/
 }
@@ -303,6 +362,10 @@ md2-option {
 }
 
 .md2-datepicker-actions {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: block;
   max-height: 48px;
   text-align: right;
@@ -523,47 +586,7 @@ md2-datepicker.md2-datepicker-disabled:focus {
   opacity: 1;
 }
 
-.md2-years {
-  position: absolute;
-  top: 10px;
-  right: 100%;
-  bottom: 10px;
-  display: block;
-  width: 100%;
-  line-height: 40px;
-  background: white;
-  overflow-x: hidden;
-  overflow-y: auto;
-  transition: 300ms;
 
-  &.active {
-    right: 0;
-  }
-
-  .md2-years-wrapper {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 100%;
-  }
-
-  .md2-year {
-    position: relative;
-    display: block;
-    margin: 0 auto;
-    padding: 0;
-    font-size: 17px;
-    font-weight: 400;
-    text-align: center;
-    cursor: pointer;
-
-    &.selected {
-      color: $primary;
-      font-size: 26px;
-      font-weight: 500;
-    }
-  }
-}
 
 /*.md2-datepicker-container {
   position: absolute;
@@ -578,20 +601,6 @@ md2-datepicker.md2-datepicker-disabled:focus {
   }
 }*/
 
-.md2-calendar {
-  position: absolute;
-  right: 100%;
-  display: block;
-  width: 100%;
-  font-size: 12px;
-  font-weight: 400;
-  text-align: center;
-  transition: 300ms;
-
-  &.active {
-    right: 0;
-  }
-}
 
 /*.md2-calendar-controls {
   position: relative;
@@ -682,7 +691,7 @@ md2-datepicker.md2-datepicker-disabled:focus {
   
 }*/
 
-.md2-clock {
+.md2-datepicker-clock {
   position: absolute;
   left: 100%;
   display: block;

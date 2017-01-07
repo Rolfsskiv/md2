@@ -28,6 +28,8 @@ import {
 } from '../core';
 import { Md2DateUtil } from './dateUtil';
 
+export const DATEPICKER_WEEK_DAYS = ['s', 'm', 't', 'w', 't', 'f', 's'];
+
 /** Change event object emitted by Md2Datepicker. */
 export class Md2DatepickerChange {
   source: Md2Datepicker;
@@ -77,7 +79,9 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   private _min: Date;
   private _max: Date;
 
-  private _format: string = '';
+  private _format: string = this.type === 'date' ?
+    'd/m/y' : this.type === 'time' ? 'HH:mm' : this.type === 'datetime' ?
+      'd/m/y HH:mm' : 'd/m/y';
 
   /** The placeholder displayed in the trigger of the datepicker. */
   private _placeholder: string;
@@ -90,6 +94,8 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    * to ensure its overflow is clipped, as it's absolutely positioned.
    */
   _selectedValueWidth: number;
+
+  _weekDays: Array<string> = DATEPICKER_WEEK_DAYS;
 
   /** View -> model callback called when value changes */
   _onChange = (value: any) => { };
@@ -137,7 +143,8 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   @Input()
   get value(): any { return this._value; }
   set value(value: any) {
-    if (value && value !== this._value) {
+    if (this._value !== value) {
+      this._value = value;
       //if (this._dateUtil.isValidDate(value)) {
       //  this._value = value;
       //} else {
@@ -210,6 +217,9 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
     if (!this._value) {
       this._placeholderState = '';
     }
+    this._isYearsVisible = false;
+    this._isCalendarVisible = this.type !== 'time' ? true : false;
+    this._isHoursVisible = true;
     this._focusHost();
   }
 
@@ -333,10 +343,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   _isCalendarVisible: boolean;
   _isHoursVisible: boolean = true;
 
-  private months: Array<string> = ['January', 'February', 'March', 'April',
-    'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  _days: Array<string> = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-    'Friday', 'Saturday'];
+
   _hours: Array<Object> = [];
   _minutes: Array<Object> = [];
 
@@ -381,7 +388,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
 
   //    switch (event.keyCode) {
   //      case TAB:
-  //      case ESCAPE: this._onBlur(); break;
+  //      case ESCAPE: this.close(); break;
   //    }
   //    let displayDate = this.displayDate;
   //    if (this._isYearsVisible) {
@@ -478,13 +485,6 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   //  }
   //}
 
-  //_onBlur() {
-  //  this._panelOpen = false;
-  //  this._isYearsVisible = false;
-  //  this._isCalendarVisible = this.type !== 'time' ? true : false;
-  //  this._isHoursVisible = true;
-  //  this._onTouched();
-  //}
   /**
    * Display Years
    */
@@ -505,8 +505,8 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
 
   private _scrollToSelectedYear() {
     setTimeout(() => {
-      let yearContainer = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-years'),
-        selectedYear: any = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-year.selected');
+      let yearContainer = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-calendar-years'),
+        selectedYear: any = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-calendar-year.selected');
       yearContainer.scrollTop = (selectedYear.offsetTop + 20) - yearContainer.clientHeight / 2;
     }, 0);
   }
@@ -570,7 +570,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
       this._resetClock();
     } else {
       this.value = this._viewValue;
-      this._onBlur();
+      this.close();
     }
   }
 
@@ -601,7 +601,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   private setDate(date: Date) {
     if (this.type === 'date') {
       this.value = date;
-      this._onBlur();
+      this.close();
     } else {
       this._selectedDate = date;
       this._viewValue = date;
@@ -737,7 +737,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
     //  if (i === 1) {
 
     //  } else {
-        
+
     //  }
     //  this._dates.push(week);
     //}
@@ -845,47 +845,6 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   //  return monthBody;
   //}
 
-  //_getMonth() {
-  //  let _days: any = {
-  //    data: [],
-  //    _INI: '',
-  //    dateEND: '',
-  //  };
-  //  let dateSelected = new Date(date);
-  //  let dayNow = (dateSelected.getDate() - 1) * 60 * 60 * 24 * 1000;
-  //  let dateNow = new Date(dateSelected.getTime());
-  //  let dateINI = new Date(dateNow.getTime() - dayNow);
-  //  let dateEND: any;
-  //  let dayLeft = 0;
-  //  if (new Date(dateINI).getDay() == 0) {
-  //    dayLeft = 6;
-  //  } else {
-  //    dayLeft = new Date(dateINI).getDay() - 1;
-  //  }
-  //  for (var i = 0; i < dayLeft; i++) {
-  //    _days.data.push({
-  //      index: null,
-  //      date: 0,
-  //    });
-  //  }
-  //  let dateTemp: any;
-  //  for (var _i = 1; _i < 32; _i++) {
-  //    dateTemp = new Date((dateINI.getTime()) + ((_i - 1) * 60 * 60 * 24 * 1000));
-  //    if (_i == dateTemp.getDate()) {
-  //      dateEND = _i;
-  //      _days.data.push({
-  //        index: _i,
-  //        date: dateTemp.getTime(),
-  //        dateActive: `${dateTemp.getFullYear()}+${dateTemp.getMonth()}+${dateTemp.getDate()}`,
-  //      });
-  //    }
-  //  }
-  //  this.dateINI = dateINI;
-  //  _days._INI = dateINI;
-  //  _days.dateEND = dateEND;
-  //  return _days;
-  //}
-
   /**
    * Select Hour
    * @param event Event Object
@@ -930,88 +889,8 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
       date.getDate(), date.getHours(), minute);
     this._selectedDate = this._viewValue;
     this.value = this._selectedDate;
-    this._onBlur();
+    this.close();
   }
-
-  // private onMouseDownClock(event: MouseEvent) {
-  //  document.addEventListener('mousemove', this.mouseMoveListener);
-  //  document.addEventListener('mouseup', this.mouseUpListener);
-
-
-
-  //  // let offset = this.offset(event.currentTarget)
-  //  // this._clock.x = offset.left + this._clock.dialRadius;
-  //  // this._clock.y = offset.top + this._clock.dialRadius;
-  //  // this._clock.dx = event.pageX - this._clock.x;
-  //  // this._clock.dy = event.pageY - this._clock.y;
-  //  // let z = Math.sqrt(this._clock.dx * this._clock.dx + this._clock.dy * this._clock.dy);
-  //  // if (z < this._clock.outerRadius - this._clock.tickRadius || z > this._clock.outerRadius
-  //  //  + this._clock.tickRadius) { return; }
-  //  // event.preventDefault();
-  //  // this.setClockHand(this._clock.dx, this._clock.dy);
-
-  //  // // this.onMouseMoveClock = this.onMouseMoveClock.bind(this);
-  //  // // this.onMouseUpClock = this.onMouseUpClock.bind(this);
-  //  // document.addEventListener('mousemove', this.onMouseMoveClock);
-  //  // document.addEventListener('mouseup', this.onMouseUpClock);
-  // }
-
-  // onMouseMoveClock(event: MouseEvent) {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   let x = event.pageX - this._clock.x,
-  //     y = event.pageY - this._clock.y;
-  //   this._clock.moved = true;
-  //   this._setClockHand(x, y);// , false, true
-  //   // if (!moved && x === dx && y === dy) {
-  //   //   // Clicking in chrome on windows will trigger a mousemove event
-  //   //   return;
-  //   // }
-  // }
-
-  // onMouseUpClock(event: MouseEvent) {
-  //   event.preventDefault();
-  //   document.removeEventListener('mousemove', this.mouseMoveListener);
-  //   document.removeEventListener('mouseup', this.mouseUpListener);
-  //   // let space = false;
-
-  //   let x = event.pageX - this._clock.x,
-  //     y = event.pageY - this._clock.y;
-  //   if ((space || this._clockEvent.moved) && x === this._clockEvent.dx && 
-  //    y === this._clockEvent.dy) {
-  //     this.setClockHand(x, y);
-  //   }
-  //   // if (this._isHoursVisible) {
-  //   //   // self.toggleView('minutes', duration / 2);
-  //   // } else {
-  //   //   // if (options.autoclose) {
-  //   //   //   self.minutesView.addClass('clockpicker-dial-out');
-  //   //   //   setTimeout(function () {
-  //   //   //     self.done();
-  //   //   //   }, duration / 2);
-  //   //   // }
-  //   // }
-
-  //   if ((space || moved) && x === dx && y === dy) {
-  //     self.setHand(x, y);
-  //   }
-  //   if (self.currentView === 'hours') {
-  //     self.toggleView('minutes', duration / 2);
-  //   } else {
-  //     if (options.autoclose) {
-  //       self.minutesView.addClass('clockpicker-dial-out');
-  //       setTimeout(function () {
-  //         self.done();
-  //       }, duration / 2);
-  //     }
-  //   }
-  //   plate.prepend(canvas);
-
-  //   // Reset cursor style of body
-  //   clearTimeout(movingTimer);
-  //   $body.removeClass('clockpicker-moving');
-
-  // }
 
   /**
    * reser clock hands
@@ -1086,21 +965,6 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
         this._clock.tickRadius
       });
     }
-  }
-
-  /**
-   * format date
-   * @param date Date Object
-   * @return string with formatted date
-   */
-  private _formatDate(date: Date): string {
-    return this.format
-      .replace('YYYY', date.getFullYear() + '')
-      .replace('MM', this._prependZero((date.getMonth() + 1) + ''))
-      .replace('DD', this._prependZero(date.getDate() + ''))
-      .replace('HH', this._prependZero(date.getHours() + ''))
-      .replace('mm', this._prependZero(date.getMinutes() + ''))
-      .replace('ss', this._prependZero(date.getSeconds() + ''));
   }
 
   /**
