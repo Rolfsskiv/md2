@@ -12,7 +12,7 @@
 <div class="md2-datepicker-trigger" cdk-overlay-origin (click)="toggle()" #origin="cdkOverlayOrigin" #trigger>
   <span class="md2-datepicker-placeholder" [class.md2-floating-placeholder]="_value"
         [@transformPlaceholder]="_placeholderState" [style.width.px]="_selectedValueWidth">{{ placeholder }}</span>
-  <span class="md2-datepicker-value"> {{ _value }} </span>
+  <span class="md2-datepicker-value"> {{ _value | date: 'd/m/y' }} </span>
   <span class="md2-datepicker-arrow"></span>
 </div>
 <template cdk-connected-overlay [origin]="origin" [open]="panelOpen" hasBackdrop (backdropClick)="close()"
@@ -27,15 +27,15 @@
       <span class="md2-datepicker-date"
             [class.active]="_isCalendarVisible && !_isYearsVisible"
             [class.hidden]="type==='time'"
-            (click)="_showCalendar()"> {{ _value | date: 'EE, MMM d' }}</span>
+            (click)="_showCalendar()"> {{ _value | date: 'EE, MMM d' }} </span>
       <span class="md2-datepicker-time"
             [class.active]="!_isCalendarVisible"
             [class.hidden]="type==='date'">
         <span class="md2-datepicker-hour"
               [class.active]="_isHoursVisible"
               (click)="_toggleHours(true)"> {{ _value | date: 'h' }} </span>:<span class="md2-datepicker-minute"
-                                                                          [class.active]="!_isHoursVisible"
-                                                                          (click)="_toggleHours(false)"> {{ _value | date: 'm' }} </span>
+                                                                                 [class.active]="!_isHoursVisible"
+                                                                                 (click)="_toggleHours(false)"> {{ _value | date: 'm' }} </span>
       </span>
     </div>
     <div class="md2-datepicker-body">
@@ -113,9 +113,9 @@
         </div>
       </div>
     </div>
-    <div class="md2-datepicker-footer">
-      <div class="md2-button" (click)="_onBlur()">Cancel</div>
-      <div class="md2-button" (click)="_onClickOk()">Ok</div>
+    <div class="md2-datepicker-actions">
+      <button class="md2-button" (click)="_onBlur()">Cancel</button>
+      <button class="md2-button" (click)="_onClickOk()">Ok</button>
     </div>
   </div>
 </template>
