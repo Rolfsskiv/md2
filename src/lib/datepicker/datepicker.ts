@@ -64,7 +64,9 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   private _panelOpen = false;
 
   /** The currently selected option. */
-  private _value: Date = new Date();
+  private _value: Date = null;
+
+  private _viewValue: Date = new Date();
 
   /** Whether filling out the datepicker is required in the form.  */
   private _required: boolean = false;
@@ -199,6 +201,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
     }
     this._placeholderState = this._isRtl() ? 'floating-rtl' : 'floating-ltr';
     this._panelOpen = true;
+    this._showDatepicker();
   }
 
   /** Closes the overlay panel and focuses the host element. */
@@ -320,17 +323,12 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
 
 
   //ngAfterContentInit() {
-  //  this._isInitialized = true;
   //  this._isCalendarVisible = this.type !== 'time' ? true : false;
   //}
 
   // private mouseMoveListener: any;
   // private mouseUpListener: any;
 
-  private _readonly: boolean = false;
-  private _isInitialized: boolean = false;
-
-  _isDatepickerVisible: boolean;
   _isYearsVisible: boolean;
   _isCalendarVisible: boolean;
   _isHoursVisible: boolean = true;
@@ -349,10 +347,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   _years: Array<number> = [];
   _dates: Array<Object> = [];
   private today: Date = new Date();
-  private _displayDate: Date = null;
   _selectedDate: Date = null;
-  _viewDay = { year: 0, month: '', date: '', day: '', hour: '', minute: '' };
-  _viewValue: string = '';
 
   _clock: any = {
     dialRadius: 120,
@@ -376,47 +371,11 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   //@Input() tabindex: number = 0;
 
 
-  get displayDate(): Date {
-    if (this._displayDate && this._dateUtil.isValidDate(this._displayDate)) {
-      return this._displayDate;
-    } else {
-      return this.today;
-    }
-  }
-  set displayDate(date: Date) {
-    if (date && this._dateUtil.isValidDate(date)) {
-      if (this._minDate && this._minDate > date) {
-        date = this._minDate;
-      }
-      if (this._maxDate && this._maxDate < date) {
-        date = this._maxDate;
-      }
-      this._displayDate = date;
-      this._viewDay = {
-        year: date.getFullYear(),
-        month: this.months[date.getMonth()],
-        date: this._prependZero(date.getDate() + ''),
-        day: this._days[date.getDay()],
-        hour: this._prependZero(date.getHours() + ''),
-        minute: this._prependZero(date.getMinutes() + '')
-      };
-    }
-  }
-
-  //@HostListener('click', ['$event'])
-  //_handleClick(event: MouseEvent) {
-  //  if (this.disabled) {
-  //    event.stopPropagation();
-  //    event.preventDefault();
-  //    return;
-  //  }
-  //}
-
   //@HostListener('keydown', ['$event'])
   //_handleKeydown(event: KeyboardEvent) {
   //  if (this.disabled) { return; }
 
-  //  if (this._isDatepickerVisible) {
+  //  if (this._panelOpen) {
   //    event.preventDefault();
   //    event.stopPropagation();
 
@@ -519,9 +478,8 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   //  }
   //}
 
-  //@HostListener('blur')
   //_onBlur() {
-  //  this._isDatepickerVisible = false;
+  //  this._panelOpen = false;
   //  this._isYearsVisible = false;
   //  this._isCalendarVisible = this.type !== 'time' ? true : false;
   //  this._isHoursVisible = true;
@@ -547,8 +505,8 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
 
   private _scrollToSelectedYear() {
     setTimeout(() => {
-      let yearContainer = this._element.nativeElement.querySelector('.md2-years'),
-        selectedYear = this._element.nativeElement.querySelector('.md2-year.selected');
+      let yearContainer = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-years'),
+        selectedYear: any = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-year.selected');
       yearContainer.scrollTop = (selectedYear.offsetTop + 20) - yearContainer.clientHeight / 2;
     }, 0);
   }
@@ -558,22 +516,21 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    * @param year
    */
   _setYear(year: number) {
-    let date = this.displayDate;
-    this.displayDate = new Date(year, date.getMonth(), date.getDate(),
-      date.getHours(), date.getMinutes());
+    this._viewValue.setFullYear(year);
+    //let date = this.displayDate;
+    //this.displayDate = new Date(year, date.getMonth(), date.getDate(),
+    //  date.getHours(), date.getMinutes());
     this.generateCalendar();
     this._isYearsVisible = false;
-    // this.isCalendarVisible = true;
+    //this.isCalendarVisible = true;
   }
 
   /**
    * Display Datepicker
    */
   _showDatepicker() {
-    if (this.disabled) { return; }
-    this._isDatepickerVisible = true;
     this._selectedDate = this.value || new Date(1, 0, 1);
-    this.displayDate = this.value || this.today;
+    this._viewValue = this.value || this.today;
     this.generateCalendar();
     this._resetClock();
     this._element.nativeElement.focus();
@@ -607,12 +564,12 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
       this._isYearsVisible = false;
       this._isCalendarVisible = true;
     } else if (this._isCalendarVisible) {
-      this.setDate(this.displayDate);
+      this.setDate(this._viewValue);
     } else if (this._isHoursVisible) {
       this._isHoursVisible = false;
       this._resetClock();
     } else {
-      this.value = this.displayDate;
+      this.value = this._viewValue;
       this._onBlur();
     }
   }
@@ -629,8 +586,9 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
     if (date.calMonth === this._prevMonth) {
       this._updateMonth(-1);
     } else if (date.calMonth === this._currMonth) {
-      this.setDate(new Date(date.dateObj.year, date.dateObj.month,
-        date.dateObj.day, this.displayDate.getHours(), this.displayDate.getMinutes()));
+      this._viewValue.setDate(date.dateObj.day);
+      //this.setDate(new Date(date.dateObj.year, date.dateObj.month,
+      //  date.dateObj.day, this.displayDate.getHours(), this.displayDate.getMinutes()));
     } else if (date.calMonth === this._nextMonth) {
       this._updateMonth(1);
     }
@@ -646,7 +604,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
       this._onBlur();
     } else {
       this._selectedDate = date;
-      this.displayDate = date;
+      this._viewValue = date;
       this._isCalendarVisible = false;
       this._isHoursVisible = true;
       this._resetClock();
@@ -658,7 +616,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    * @param noOfMonths increment number of months
    */
   _updateMonth(noOfMonths: number) {
-    this.displayDate = this._dateUtil.incrementMonths(this.displayDate, noOfMonths);
+    this._viewValue = this._dateUtil.incrementMonths(this._viewValue, noOfMonths);
     this.generateCalendar();
   }
 
@@ -668,7 +626,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    */
   _isBeforeMonth() {
     return !this._minDate ? true :
-      this._minDate && this._dateUtil.getMonthDistance(this.displayDate, this._minDate) < 0;
+      this._minDate && this._dateUtil.getMonthDistance(this._viewValue, this._minDate) < 0;
   }
 
   /**
@@ -677,7 +635,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    */
   _isAfterMonth() {
     return !this._maxDate ? true :
-      this._maxDate && this._dateUtil.getMonthDistance(this.displayDate, this._maxDate) > 0;
+      this._maxDate && this._dateUtil.getMonthDistance(this._viewValue, this._maxDate) > 0;
   }
 
   /**
@@ -709,73 +667,224 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    * Generate Month Calendar
    */
   private generateCalendar(): void {
-    let year = this.displayDate.getFullYear();
-    let month = this.displayDate.getMonth();
+    let year = this._viewValue.getFullYear();
+    let month = this._viewValue.getMonth();
 
     this._dates.length = 0;
 
-    let firstDayOfMonth = this._dateUtil.getFirstDateOfMonth(this.displayDate);
-    let numberOfDaysInMonth = this._dateUtil.getNumberOfDaysInMonth(this.displayDate);
+    let firstDayOfMonth = this._dateUtil.getFirstDateOfMonth(this._viewValue);
+    let numberOfDaysInMonth = this._dateUtil.getNumberOfDaysInMonth(this._viewValue);
     let numberOfDaysInPrevMonth = this._dateUtil.getNumberOfDaysInMonth(
-      this._dateUtil.incrementMonths(this.displayDate, -1));
+      this._dateUtil.incrementMonths(this._viewValue, -1));
 
     let dayNbr = 1;
     let calMonth = this._prevMonth;
-    for (let i = 1; i < 7; i++) {
-      let week: Array<any> = [];
-      if (i === 1) {
-        let prevMonth = numberOfDaysInPrevMonth - firstDayOfMonth.getDay() + 1;
-        for (let j = prevMonth; j <= numberOfDaysInPrevMonth; j++) {
-          let iDate = { year: year, month: month - 1, day: j, hour: 0, minute: 0 };
-          let date: Date = new Date(year, month - 1, j);
-          week.push({
-            date: date,
-            dateObj: iDate,
-            calMonth: calMonth,
-            today: this._dateUtil.isSameDay(this.today, date),
-            disabled: this._isDisabledDate(date)
-          });
-        }
 
-        calMonth = this._currMonth;
-        let daysLeft = 7 - week.length;
-        for (let j = 0; j < daysLeft; j++) {
-          let iDate = { year: year, month: month, day: dayNbr, hour: 0, minute: 0 };
-          let date: Date = new Date(year, month, dayNbr);
-          week.push({
-            date: date,
-            dateObj: iDate,
-            calMonth: calMonth,
-            today: this._dateUtil.isSameDay(this.today, date),
-            disabled: this._isDisabledDate(date)
-          });
-          dayNbr++;
-        }
-      } else {
-        for (let j = 1; j < 8; j++) {
-          if (dayNbr > numberOfDaysInMonth) {
-            dayNbr = 1;
-            calMonth = this._nextMonth;
-          }
-          let iDate = {
-            year: year,
-            month: calMonth === this._currMonth ? month : month + 1,
-            day: dayNbr, hour: 0, minute: 0
-          };
-          let date: Date = new Date(year, iDate.month, dayNbr);
-          week.push({
-            date: date,
-            dateObj: iDate,
-            calMonth: calMonth,
-            today: this._dateUtil.isSameDay(this.today, date),
-            disabled: this._isDisabledDate(date)
-          });
-          dayNbr++;
-        }
-      }
-      this._dates.push(week);
+    let prevMonth = numberOfDaysInPrevMonth - firstDayOfMonth.getDay() + 1;
+    for (let j = prevMonth; j <= numberOfDaysInPrevMonth; j++) {
+      let iDate = { year: year, month: month - 1, day: j, hour: 0, minute: 0 };
+      let date: Date = new Date(year, month - 1, j);
+      this._dates.push({
+        date: date,
+        dateObj: iDate,
+        calMonth: calMonth,
+        today: this._dateUtil.isSameDay(this.today, date),
+        disabled: this._isDisabledDate(date)
+      });
     }
+
+    calMonth = this._currMonth;
+    for (let j = 0; j < numberOfDaysInMonth; j++) {
+      let iDate = { year: year, month: month, day: dayNbr, hour: 0, minute: 0 };
+      let date: Date = new Date(year, month, dayNbr);
+      this._dates.push({
+        date: date,
+        dateObj: iDate,
+        calMonth: calMonth,
+        today: this._dateUtil.isSameDay(this.today, date),
+        disabled: this._isDisabledDate(date)
+      });
+      dayNbr++;
+    }
+
+
+
+    //for (let j = 1; j < 8; j++) {
+    //  if (dayNbr > numberOfDaysInMonth) {
+    //    dayNbr = 1;
+    //    calMonth = this._nextMonth;
+    //  }
+    //  let iDate = {
+    //    year: year,
+    //    month: calMonth === this._currMonth ? month : month + 1,
+    //    day: dayNbr, hour: 0, minute: 0
+    //  };
+    //  let date: Date = new Date(year, iDate.month, dayNbr);
+    //  week.push({
+    //    date: date,
+    //    dateObj: iDate,
+    //    calMonth: calMonth,
+    //    today: this._dateUtil.isSameDay(this.today, date),
+    //    disabled: this._isDisabledDate(date)
+    //  });
+    //  dayNbr++;
+    //}
+
+
+
+    //for (let i = 1; i < 7; i++) {
+    //  let week: Array<any> = [];
+    //  if (i === 1) {
+
+    //  } else {
+        
+    //  }
+    //  this._dates.push(week);
+    //}
   }
+
+  //_buildCalendarForMonth(date: Date) {
+  //  date = this._dateUtil.isValidDate(date) ? date : new Date();
+
+  //  let firstDayOfMonth = this._dateUtil.getFirstDateOfMonth(date);
+  //  let firstDayOfTheWeek = this._getLocaleDay_(firstDayOfMonth);
+  //  let numberOfDaysInMonth = this._dateUtil.getNumberOfDaysInMonth(date);
+  //  var monthBody = document.createDocumentFragment();
+
+  //  var rowNumber = 1;
+  //  var row = this.buildDateRow(rowNumber);
+  //  monthBody.appendChild(row);
+
+  //  // If this is the final month in the list of items, only the first week should render,
+  //  // so we should return immediately after the first row is complete and has been
+  //  // attached to the body.
+  //  var isFinalMonth = this.offset === this.monthCtrl.items.length - 1;
+
+  //  // Add a label for the month. If the month starts on a Sun/Mon/Tues, the month label
+  //  // goes on a row above the first of the month. Otherwise, the month label takes up the first
+  //  // two cells of the first row.
+  //  var blankCellOffset = 0;
+  //  var monthLabelCell = document.createElement('td');
+  //  var monthLabelCellContent = document.createElement('span');
+
+  //  monthLabelCellContent.textContent = this.dateLocale.monthHeaderFormatter(date);
+  //  monthLabelCell.appendChild(monthLabelCellContent);
+  //  monthLabelCell.classList.add('md-calendar-month-label');
+  //  // If the entire month is after the max date, render the label as a disabled state.
+  //  if (this.calendarCtrl.maxDate && firstDayOfMonth > this.calendarCtrl.maxDate) {
+  //    monthLabelCell.classList.add('md-calendar-month-label-disabled');
+  //  } else {
+  //    monthLabelCell.addEventListener('click', this.monthCtrl.headerClickHandler);
+  //    monthLabelCell.setAttribute('data-timestamp', firstDayOfMonth.getTime());
+  //    monthLabelCell.setAttribute('aria-label', this.dateLocale.monthFormatter(date));
+  //    monthLabelCell.appendChild(this.arrowIcon.cloneNode(true));
+  //  }
+
+  //  if (firstDayOfTheWeek <= 2) {
+  //    monthLabelCell.setAttribute('colspan', '7');
+
+  //    var monthLabelRow = this.buildDateRow();
+  //    monthLabelRow.appendChild(monthLabelCell);
+  //    monthBody.insertBefore(monthLabelRow, row);
+
+  //    if (isFinalMonth) {
+  //      return monthBody;
+  //    }
+  //  } else {
+  //    blankCellOffset = 3;
+  //    monthLabelCell.setAttribute('colspan', '3');
+  //    row.appendChild(monthLabelCell);
+  //  }
+
+  //  // Add a blank cell for each day of the week that occurs before the first of the month.
+  //  // For example, if the first day of the month is a Tuesday, add blank cells for Sun and Mon.
+  //  // The blankCellOffset is needed in cases where the first N cells are used by the month label.
+  //  for (var i = blankCellOffset; i < firstDayOfTheWeek; i++) {
+  //    row.appendChild(this.buildDateCell());
+  //  }
+
+  //  // Add a cell for each day of the month, keeping track of the day of the week so that
+  //  // we know when to start a new row.
+  //  var dayOfWeek = firstDayOfTheWeek;
+  //  var iterationDate = firstDayOfMonth;
+  //  for (var d = 1; d <= numberOfDaysInMonth; d++) {
+  //    // If we've reached the end of the week, start a new row.
+  //    if (dayOfWeek === 7) {
+  //      // We've finished the first row, so we're done if this is the final month.
+  //      if (isFinalMonth) {
+  //        return monthBody;
+  //      }
+  //      dayOfWeek = 0;
+  //      rowNumber++;
+  //      row = this.buildDateRow(rowNumber);
+  //      monthBody.appendChild(row);
+  //    }
+
+  //    iterationDate.setDate(d);
+  //    var cell = this.buildDateCell(iterationDate);
+  //    row.appendChild(cell);
+
+  //    dayOfWeek++;
+  //  }
+
+  //  // Ensure that the last row of the month has 7 cells.
+  //  while (row.childNodes.length < 7) {
+  //    row.appendChild(this.buildDateCell());
+  //  }
+
+  //  // Ensure that all months have 6 rows. This is necessary for now because the virtual-repeat
+  //  // requires that all items have exactly the same height.
+  //  while (monthBody.childNodes.length < 6) {
+  //    var whitespaceRow = this.buildDateRow();
+  //    for (var j = 0; j < 7; j++) {
+  //      whitespaceRow.appendChild(this.buildDateCell());
+  //    }
+  //    monthBody.appendChild(whitespaceRow);
+  //  }
+
+  //  return monthBody;
+  //}
+
+  //_getMonth() {
+  //  let _days: any = {
+  //    data: [],
+  //    _INI: '',
+  //    dateEND: '',
+  //  };
+  //  let dateSelected = new Date(date);
+  //  let dayNow = (dateSelected.getDate() - 1) * 60 * 60 * 24 * 1000;
+  //  let dateNow = new Date(dateSelected.getTime());
+  //  let dateINI = new Date(dateNow.getTime() - dayNow);
+  //  let dateEND: any;
+  //  let dayLeft = 0;
+  //  if (new Date(dateINI).getDay() == 0) {
+  //    dayLeft = 6;
+  //  } else {
+  //    dayLeft = new Date(dateINI).getDay() - 1;
+  //  }
+  //  for (var i = 0; i < dayLeft; i++) {
+  //    _days.data.push({
+  //      index: null,
+  //      date: 0,
+  //    });
+  //  }
+  //  let dateTemp: any;
+  //  for (var _i = 1; _i < 32; _i++) {
+  //    dateTemp = new Date((dateINI.getTime()) + ((_i - 1) * 60 * 60 * 24 * 1000));
+  //    if (_i == dateTemp.getDate()) {
+  //      dateEND = _i;
+  //      _days.data.push({
+  //        index: _i,
+  //        date: dateTemp.getTime(),
+  //        dateActive: `${dateTemp.getFullYear()}+${dateTemp.getMonth()}+${dateTemp.getDate()}`,
+  //      });
+  //    }
+  //  }
+  //  this.dateINI = dateINI;
+  //  _days._INI = dateINI;
+  //  _days.dateEND = dateEND;
+  //  return _days;
+  //}
 
   /**
    * Select Hour
@@ -804,9 +913,9 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    * @param hour number of hours
    */
   private setHour(hour: number) {
-    let date = this.displayDate;
+    let date = this._viewValue;
     this._isHoursVisible = false;
-    this.displayDate = new Date(date.getFullYear(), date.getMonth(),
+    this._viewValue = new Date(date.getFullYear(), date.getMonth(),
       date.getDate(), hour, date.getMinutes());
     this._resetClock();
   }
@@ -816,10 +925,10 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    * @param minute number of minutes
    */
   private setMinute(minute: number) {
-    let date = this.displayDate;
-    this.displayDate = new Date(date.getFullYear(), date.getMonth(),
+    let date = this._viewValue;
+    this._viewValue = new Date(date.getFullYear(), date.getMonth(),
       date.getDate(), date.getHours(), minute);
-    this._selectedDate = this.displayDate;
+    this._selectedDate = this._viewValue;
     this.value = this._selectedDate;
     this._onBlur();
   }
@@ -908,8 +1017,8 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    * reser clock hands
    */
   private _resetClock() {
-    let hour = this.displayDate.getHours();
-    let minute = this.displayDate.getMinutes();
+    let hour = this._viewValue.getHours();
+    let minute = this._viewValue.getMinutes();
 
     let value = this._isHoursVisible ? hour : minute,
       unit = Math.PI / (this._isHoursVisible ? 6 : 30),
