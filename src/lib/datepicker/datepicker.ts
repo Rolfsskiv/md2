@@ -49,7 +49,6 @@ export class Md2DatepickerChange {
     '[attr.aria-required]': 'required.toString()',
     '[attr.aria-disabled]': 'disabled.toString()',
     '[attr.aria-invalid]': '_control?.invalid || "false"',
-    '[attr.aria-owns]': '_optionIds',
     '[class.md2-datepicker-disabled]': 'disabled',
     '(keydown)': '_handleKeydown($event)',
     '(blur)': '_onBlur()'
@@ -86,16 +85,27 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   /** The placeholder displayed in the trigger of the datepicker. */
   private _placeholder: string;
 
+  private today: Date = new Date();
+
   /** The animation state of the placeholder. */
   _placeholderState = '';
 
-  /**
-   * The width of the selected option's value. Must be set programmatically
-   * to ensure its overflow is clipped, as it's absolutely positioned.
-   */
-  _selectedValueWidth: number;
-
   _weekDays: Array<string> = DATEPICKER_WEEK_DAYS;
+  _years: Array<number> = [];
+  _dates: Array<Object> = [];
+  _hours: Array<Object> = [];
+  _minutes: Array<Object> = [];
+
+  _clock: any = {
+    dialRadius: 120,
+    outerRadius: 99,
+    innerRadius: 66,
+    tickRadius: 17,
+    hand: { x: 0, y: 0 },
+    x: 0, y: 0,
+    dx: 0, dy: 0,
+    moved: false
+  };
 
   /** View -> model callback called when value changes */
   _onChange = (value: any) => { };
@@ -103,11 +113,12 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   /** View -> model callback called when datepicker has been touched */
   _onTouched = () => { };
 
-  /** The IDs of child options to be passed to the aria-owns attribute. */
-  _optionIds: string = '';
-
   /** The value of the datepicker panel's transform-origin property. */
   _transformOrigin: string = 'top';
+
+  _isCalendarVisible: boolean;
+  _isYearsVisible: boolean;
+  _isHoursVisible: boolean;
 
   @ViewChild('trigger') trigger: ElementRef;
   @ViewChild(ConnectedOverlayDirective) overlayDir: ConnectedOverlayDirective;
@@ -201,6 +212,13 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   }
 
   ngAfterContentInit() {
+    this.resetView();
+  }
+
+  private resetView() {
+    this._isCalendarVisible = this.type !== 'time' ? true : false;
+    this._isYearsVisible = false;
+    this._isHoursVisible = true;
   }
 
   ngOnDestroy() {
@@ -227,9 +245,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
     if (!this._value) {
       this._placeholderState = '';
     }
-    this._isYearsVisible = false;
-    this._isCalendarVisible = this.type !== 'time' ? true : false;
-    this._isHoursVisible = true;
+    this.resetView();
     this._focusHost();
   }
 
@@ -290,6 +306,57 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
     return this._getTriggerRect().width;
   }
 
+  /**
+   * Update Month
+   * @param noOfMonths increment number of months
+   */
+  _updateMonth(noOfMonths: number) {
+    this.viewDate = this._dateUtil.incrementMonths(this._viewDate, noOfMonths);
+  }
+
+  /**
+   * Check is Before month enabled or not
+   * @return boolean
+   */
+  _isBeforeMonth() {
+    return !this._min ? true :
+      this._min && this._dateUtil.getMonthDistance(this._viewDate, this._min) < 0;
+  }
+
+  /**
+   * Check is After month enabled or not
+   * @return boolean
+   */
+  _isAfterMonth() {
+    return !this._max ? true :
+      this._max && this._dateUtil.getMonthDistance(this._viewDate, this._max) > 0;
+  }
+
+  /**
+   * Check the date is enabled or not
+   * @param date Date Object
+   * @return boolean
+   */
+  private _isDisabledDate(date: Date): boolean {
+    if (this._min && this._max) {
+      return (this._min > date) || (this._max < date);
+    } else if (this._min) {
+      return (this._min > date);
+    } else if (this._max) {
+      return (this._max < date);
+    } else {
+      return false;
+    }
+
+    // if (this.disableWeekends) {
+    //   let dayNbr = this.getDayNumber(date);
+    //   if (dayNbr === 0 || dayNbr === 6) {
+    //     return true;
+    //   }
+    // }
+    // return false;
+  }
+
   /** Ensures the panel opens if activated by the keyboard. */
   _handleKeydown(event: KeyboardEvent): void {
     if (event.keyCode === ENTER || event.keyCode === SPACE) {
@@ -342,42 +409,20 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   //==================================================================================================================================================
 
 
-  //ngAfterContentInit() {
-  //  this._isCalendarVisible = this.type !== 'time' ? true : false;
-  //}
-
   // private mouseMoveListener: any;
   // private mouseUpListener: any;
 
-  _isYearsVisible: boolean;
-  _isCalendarVisible: boolean;
-  _isHoursVisible: boolean = true;
 
 
-  _hours: Array<Object> = [];
-  _minutes: Array<Object> = [];
+
+
+
 
   _prevMonth: number = 1;
   _currMonth: number = 2;
   _nextMonth: number = 3;
 
-  _years: Array<number> = [];
-  _dates: Array<Object> = [];
-  private today: Date = new Date();
 
-  _clock: any = {
-    dialRadius: 120,
-    outerRadius: 99,
-    innerRadius: 66,
-    tickRadius: 17,
-    hand: { x: 0, y: 0 },
-    x: 0, y: 0,
-    dx: 0, dy: 0,
-    moved: false
-  };
-
-  private _minDate: Date = null;
-  private _maxDate: Date = null;
 
   @Input() name: string = '';
   //@Input() id: string = 'md2-datepicker-' + (++nextId);
@@ -495,56 +540,26 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   //}
 
   /**
-   * Display Years
+   * view Years
    */
-  _showYear() {
-    this._isYearsVisible = true;
+  _viewYears() {
     this._isCalendarVisible = true;
+    this._isYearsVisible = true;
     this._scrollToSelectedYear();
   }
 
-  private getYears() {
-    let startYear = this._minDate ? this._minDate.getFullYear() : 1900,
-      endYear = this._maxDate ? this._maxDate.getFullYear() : this.today.getFullYear() + 100;
-    this._years = [];
-    for (let i = startYear; i <= endYear; i++) {
-      this._years.push(i);
-    }
-  }
-
-  private _scrollToSelectedYear() {
-    setTimeout(() => {
-      let yearContainer = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-calendar-years'),
-        selectedYear: any = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-calendar-year.selected');
-      yearContainer.scrollTop = (selectedYear.offsetTop + 20) - yearContainer.clientHeight / 2;
-    }, 0);
-  }
-
   /**
-   * select year
-   * @param year
+   * View Month
    */
-  _setYear(year: number) {
-    let date = this._viewDate;
-    this.viewDate = new Date(year, date.getMonth(), date.getDate(),
-      date.getHours(), date.getMinutes());
-    this.generateCalendar();
-    this._isYearsVisible = false;
-    //this._isCalendarVisible = true;
-  }
-
-  /**
-   * Display Calendar
-   */
-  _showCalendar() {
+  _viewMonth() {
     this._isYearsVisible = false;
     this._isCalendarVisible = true;
   }
 
   /**
-   * Toggle Hour visiblity
+   * View Hours
    */
-  _toggleHours(value: boolean) {
+  _viewHours(value: boolean) {
     this._isYearsVisible = false;
     this._isCalendarVisible = false;
     this._isYearsVisible = false;
@@ -553,9 +568,9 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   }
 
   /**
-   * Ok Button Event
-   */
-  _onClickOk() {
+  * Ok Button Click Event
+  */
+  _handleOkClick() {
     if (this._isYearsVisible) {
       this.generateCalendar();
       this._isYearsVisible = false;
@@ -571,21 +586,50 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
     }
   }
 
+  private getYears() {
+    let startYear = this._min ? this._min.getFullYear() : 1900,
+      endYear = this._max ? this._max.getFullYear() : this.today.getFullYear() + 100;
+    this._years = [];
+    for (let i = startYear; i <= endYear; i++) {
+      this._years.push(i);
+    }
+  }
+
+  private _scrollToSelectedYear() {
+    setTimeout(() => {
+      let yearContainer = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-calendar-years'),
+        selectedYear: any = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-calendar-year.selected');
+      yearContainer.scrollTop = (selectedYear.offsetTop + 20) - yearContainer.clientHeight / 2;
+    }, 0);
+  }
+
+  /**
+   * set year
+   * @param year
+   */
+  _setYear(year: number) {
+    let date = this._viewDate;
+    this.viewDate = new Date(year, date.getMonth(), date.getDate(),
+      date.getHours(), date.getMinutes());
+    this.generateCalendar();
+    this._isYearsVisible = false;
+    //this._isCalendarVisible = true;
+  }
+
   /**
    * Date Selection Event
    * @param event Event Object
    * @param date Date Object
    */
-  _onClickDate(event: Event, date: any) {
+  _handleDateClick(event: Event, date: any) {
     event.preventDefault();
     event.stopPropagation();
     if (date.disabled) { return; }
     if (date.calMonth === this._prevMonth) {
       this._updateMonth(-1);
     } else if (date.calMonth === this._currMonth) {
-      this._viewDate.setDate(date.dateObj.day);
-      //this.setDate(new Date(date.dateObj.year, date.dateObj.month,
-      //  date.dateObj.day, this.displayDate.getHours(), this.displayDate.getMinutes()));
+      this.setDate(new Date(date.dateObj.year, date.dateObj.month,
+        date.dateObj.day, this._viewDate.getHours(), this._viewDate.getMinutes()));
     } else if (date.calMonth === this._nextMonth) {
       this._updateMonth(1);
     }
@@ -596,67 +640,15 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
    * @param date Date Object
    */
   private setDate(date: Date) {
+    this.viewDate = date;
     if (this.type === 'date') {
       this.value = date;
       this.close();
     } else {
-      this._viewDate = date;
       this._isCalendarVisible = false;
       this._isHoursVisible = true;
       this._resetClock();
     }
-  }
-
-  /**
-   * Update Month
-   * @param noOfMonths increment number of months
-   */
-  _updateMonth(noOfMonths: number) {
-    this._viewDate = this._dateUtil.incrementMonths(this._viewDate, noOfMonths);
-    this.generateCalendar();
-  }
-
-  /**
-   * Check is Before month enabled or not
-   * @return boolean
-   */
-  _isBeforeMonth() {
-    return !this._minDate ? true :
-      this._minDate && this._dateUtil.getMonthDistance(this._viewDate, this._minDate) < 0;
-  }
-
-  /**
-   * Check is After month enabled or not
-   * @return boolean
-   */
-  _isAfterMonth() {
-    return !this._maxDate ? true :
-      this._maxDate && this._dateUtil.getMonthDistance(this._viewDate, this._maxDate) > 0;
-  }
-
-  /**
-   * Check the date is enabled or not
-   * @param date Date Object
-   * @return boolean
-   */
-  private _isDisabledDate(date: Date): boolean {
-    if (this._minDate && this._maxDate) {
-      return (this._minDate > date) || (this._maxDate < date);
-    } else if (this._minDate) {
-      return (this._minDate > date);
-    } else if (this._maxDate) {
-      return (this._maxDate < date);
-    } else {
-      return false;
-    }
-
-    // if (this.disableWeekends) {
-    //   let dayNbr = this.getDayNumber(date);
-    //   if (dayNbr === 0 || dayNbr === 6) {
-    //     return true;
-    //   }
-    // }
-    // return false;
   }
 
   /**
@@ -962,33 +954,6 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
     }
   }
 
-  /**
-   * Prepend Zero
-   * @param value String value
-   * @return string with prepend Zero
-   */
-  private _prependZero(value: string): string {
-    return parseInt(value) < 10 ? '0' + value : value;
-  }
-
-  /**
-   * Get Offset
-   * @param element HtmlElement
-   * @return top, left offset from page
-   */
-  private _offset(element: any) {
-    let top = 0, left = 0;
-    do {
-      top += element.offsetTop || 0;
-      left += element.offsetLeft || 0;
-      element = element.offsetParent;
-    } while (element);
-
-    return {
-      top: top,
-      left: left
-    };
-  }
 }
 
 @NgModule({

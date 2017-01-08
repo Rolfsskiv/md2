@@ -27,20 +27,20 @@
       <div class="md2-datepicker-header-year"
            [class.active]="_isYearsVisible"
            [class.hidden]="type==='time'"
-           (click)="_showYear()">{{ _viewDate | date: 'y' }}</div>
+           (click)="_viewYears()">{{ _viewDate | date: 'y' }}</div>
       <div class="md2-datepicker-header-date-time">
         <span class="md2-datepicker-header-date"
               [class.active]="_isCalendarVisible && !_isYearsVisible"
               [class.hidden]="type==='time'"
-              (click)="_showCalendar()">{{ _viewDate | date: 'EE, MMM d' }}</span>
+              (click)="_viewMonth()">{{ _viewDate | date: 'EE, MMM d' }}</span>
         <span class="md2-datepicker-header-time"
               [class.active]="!_isCalendarVisible"
               [class.hidden]="type==='date'">
           <span class="md2-datepicker-header-hour"
                 [class.active]="_isHoursVisible"
-                (click)="_toggleHours(true)">{{ _viewDate | date: 'h' }}</span>:<span class="md2-datepicker-header-minute"
-                                                                                      [class.active]="!_isHoursVisible"
-                                                                                      (click)="_toggleHours(false)">{{ _viewDate | date: 'm' }}</span>
+                (click)="_viewHours(true)">{{ _viewDate | date: 'h' }}</span>:<span class="md2-datepicker-header-minute"
+                                                                                    [class.active]="!_isHoursVisible"
+                                                                                    (click)="_viewHours(false)">{{ _viewDate | date: 'm' }}</span>
         </span>
       </div>
     </div>
@@ -80,7 +80,7 @@
                  [class.prev-month]="d.calMonth===_prevMonth"
                  [class.curr-month]="d.calMonth===_currMonth"
                  [class.next-month]="d.calMonth===_nextMonth"
-                 (click)="_onClickDate($event,d)">{{d.dateObj.day}}</div>
+                 (click)="_handleDateClick($event,d)">{{d.dateObj.day}}</div>
           </div>
         </div>
       </div>
@@ -112,7 +112,7 @@
       </div>
       <div class="md2-datepicker-actions">
         <button class="md2-button" (click)="close()">Cancel</button>
-        <button class="md2-button" (click)="_onClickOk()">Ok</button>
+        <button class="md2-button" (click)="_handleOkClick()">Ok</button>
       </div>
     </div>
   </div>
