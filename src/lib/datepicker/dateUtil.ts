@@ -57,7 +57,11 @@ export class Md2DateUtil {
    * @returns {boolean}
    */
   isSameDay(d1: Date, d2: Date) {
-    return d1.getDate() == d2.getDate() && this.isSameMonthAndYear(d1, d2);
+    if (d1 && d2 && this.isValidDate(d1) && this.isValidDate(d2)) {
+      return d1.getDate() == d2.getDate() && this.isSameMonthAndYear(d1, d2);
+    } else {
+      return false;
+    }
   }
 
   /**
