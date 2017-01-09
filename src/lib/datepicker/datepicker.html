@@ -12,16 +12,17 @@
 <div class="md2-datepicker-input-container">
   <!--<span class="md2-datepicker-placeholder" [class.md2-floating-placeholder]="_value"
         [@transformPlaceholder]="_placeholderState" [style.width.px]="_selectedValueWidth">{{ placeholder }}</span>-->
-  <input class="md2-datepicker-input" type="text" size="11" [disabled]="disabled">
+  <input class="md2-datepicker-input" type="text" size="11" [disabled]="disabled" [value]="_value | date: 'd/M/y'" />
   <!--<span class="md2-datepicker-value"> {{ _value | date: 'd/m/y' }} </span>
   -->
   <div class="md2-datepicker-button" (click)="toggle()">
     <span class="md2-datepicker-arrow"></span>
   </div>
 </div>
-<template cdk-connected-overlay [origin]="origin" [open]="panelOpen" hasBackdrop (backdropClick)="close()"
-          backdropClass="cdk-overlay-transparent-backdrop">
-  <div class="md2-datepicker-panel" [@transformPanel]="'showing'" (@transformPanel.done)="_onPanelDone()"
+<template portal>
+  <!--cdk-connected-overlay [origin]="origin" [open]="panelOpen" hasBackdrop (backdropClick)="close()"
+          backdropClass="cdk-overlay-transparent-backdrop"-->
+  <div #panel class="md2-datepicker-panel" [@transformPanel]="'showing'" (@transformPanel.done)="_onPanelDone()"
        (keydown)="_handleOnKeydown($event)" [style.transformOrigin]="_transformOrigin">
     <div class="md2-datepicker-header">
       <div class="md2-datepicker-header-year"

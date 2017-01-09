@@ -9,7 +9,9 @@ import {
   Output,
   Renderer,
   ViewEncapsulation,
+  QueryList,
   ViewChild,
+  ViewChildren,
   NgModule,
   ModuleWithProviders
 } from '@angular/core';
@@ -24,7 +26,13 @@ import { ConnectedOverlayDirective } from '../core/overlay/overlay-directives';
 import { ViewportRuler } from '../core/overlay/position/viewport-ruler';
 import {
   OVERLAY_PROVIDERS,
+  Overlay,
   OverlayModule,
+  OverlayState,
+  OverlayOrigin,
+  Portal,
+  PortalModule,
+  TemplatePortalDirective,
 } from '../core';
 import { Md2DateUtil } from './dateUtil';
 
@@ -121,7 +129,11 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   _isHoursVisible: boolean;
 
   @ViewChild('trigger') trigger: ElementRef;
+  @ViewChild('panel') panelElement: ElementRef;
   @ViewChild(ConnectedOverlayDirective) overlayDir: ConnectedOverlayDirective;
+
+  @ViewChildren(TemplatePortalDirective) templatePortals: QueryList<Portal<any>>;
+  @ViewChild(OverlayOrigin) _overlayOrigin: OverlayOrigin;
 
   @Output() change: EventEmitter<Md2DatepickerChange> = new EventEmitter<Md2DatepickerChange>();
 
@@ -199,7 +211,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   @Output() onOpen = new EventEmitter();
   @Output() onClose = new EventEmitter();
 
-  constructor(private _dateUtil: Md2DateUtil, private _element: ElementRef,
+  constructor(private _dateUtil: Md2DateUtil, private _element: ElementRef, public overlay: Overlay,
     private _renderer: Renderer, private _viewportRuler: ViewportRuler,
     @Optional() private _dir: Dir, @Optional() public _control: NgControl) {
     if (this._control) {
@@ -226,7 +238,8 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
 
   /** Toggles the overlay panel open or closed. */
   toggle(): void {
-    this.panelOpen ? this.close() : this.open();
+    //this.panelOpen ? this.close() :
+    this.open();
   }
 
   /** Opens the overlay panel. */
@@ -237,6 +250,18 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
     this._placeholderState = this._isRtl() ? 'floating-rtl' : 'floating-ltr';
     this._panelOpen = true;
     this.viewDate = this.value || this.today;
+
+    let config = new OverlayState();
+
+    config.positionStrategy = this.overlay.position()
+      .global()
+      .centerHorizontally()
+      .centerVertically();
+    config.hasBackdrop = true;
+
+    let overlayRef = this.overlay.create(config);
+    overlayRef.attach(this.templatePortals.first);
+    overlayRef.backdropClick().subscribe(() => overlayRef.detach());
   }
 
   /** Closes the overlay panel and focuses the host element. */
@@ -297,13 +322,6 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
 
   _isRtl(): boolean {
     return this._dir ? this._dir.value === 'rtl' : false;
-  }
-
-  /** The width of the trigger element. This is necessary to match
-   * the overlay width to the trigger width.
-   */
-  _getWidth(): number {
-    return this._getTriggerRect().width;
   }
 
   /**
@@ -393,12 +411,6 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
   /** Returns the correct tabindex for the datepicker depending on disabled state. */
   _getTabIndex() {
     return this.disabled ? '-1' : '0';
-  }
-
-
-
-  private _getTriggerRect(): ClientRect {
-    return this.trigger.nativeElement.getBoundingClientRect();
   }
 
   /** Focuses the host element when the panel closes. */
@@ -597,8 +609,8 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
 
   private _scrollToSelectedYear() {
     setTimeout(() => {
-      let yearContainer = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-calendar-years'),
-        selectedYear: any = this.overlayDir.overlayRef.overlayElement.querySelector('.md2-calendar-year.selected');
+      let yearContainer = this.panelElement.nativeElement.querySelector('.md2-calendar-years'),
+        selectedYear: any = this.panelElement.nativeElement.querySelector('.md2-calendar-year.selected');
       yearContainer.scrollTop = (selectedYear.offsetTop + 20) - yearContainer.clientHeight / 2;
     }, 0);
   }
@@ -957,7 +969,7 @@ export class Md2Datepicker implements AfterContentInit, ControlValueAccessor, On
 }
 
 @NgModule({
-  imports: [CommonModule, OverlayModule],
+  imports: [CommonModule, OverlayModule, PortalModule],
   exports: [Md2Datepicker],
   declarations: [Md2Datepicker],
 })
@@ -965,7 +977,7 @@ export class Md2DatepickerModule {
   static forRoot(): ModuleWithProviders {
     return {
       ngModule: Md2DatepickerModule,
-      providers: [OVERLAY_PROVIDERS, Md2DateUtil]
+      providers: [Md2DateUtil]//OVERLAY_PROVIDERS,
     };
   }
 }

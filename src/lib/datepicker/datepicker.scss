@@ -6,8 +6,8 @@ $md2-datepicker-arrow-size: 5px !default;
 $md2-datepicker-arrow-margin: 4px !default;
 $md2-datepicker-panel-max-height: 256px !default;
 
-$md2-datepicker-date-size: 40px !default;
-$md2-datepicker-calendar-height: 390px !default;
+$md2-datepicker-date-size: 38px !default;
+$md2-datepicker-calendar-height: 376px !default;
 
 @mixin md2-datepicker-base() {
   position: absolute;
@@ -164,19 +164,16 @@ md2-datepicker {
 }
 
 .md2-datepicker-panel {
-  box-shadow: 0 0 3px rgba(black, 0.2), 0 8px 10px 1px rgba(black, 0.14), 0 3px 14px 2px rgba(black, 0.12);
+  width: 312px;
   min-width: 112px !important;
-  width: 310px;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-top: 0;
-  padding-bottom: 0;
-  /*max-height: $md2-datepicker-panel-max-height;*/
+  border-radius: 3px;
   background: white;
+  overflow: hidden;
+  box-shadow: 0 0 3px rgba(black, 0.2), 0 8px 10px 1px rgba(black, 0.14), 0 3px 14px 2px rgba(black, 0.12);
 }
 
 .md2-datepicker-header {
-  padding: 16px 20px;
+  padding: 16px;
   color: white;
   font-weight: 500;
   background: $primary;
@@ -188,7 +185,7 @@ md2-datepicker {
 }
 
 .md2-datepicker-header-date-time {
-  font-size: 36px;
+  font-size: 34px;
   white-space: nowrap;
 }
 
@@ -220,7 +217,7 @@ md2-datepicker {
 .md2-datepicker-container {
   position: relative;
   height: $md2-datepicker-calendar-height;
-  margin: 0 8px;
+  margin: 0 16px;
   font-size: 13px;
   font-weight: 400;
   overflow: hidden;
@@ -396,6 +393,18 @@ md2-datepicker {
   }
 }
 
+.cdk-visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  text-transform: none;
+  width: 1px;
+}
+
 .cdk-overlay-container, .cdk-global-overlay-wrapper {
   pointer-events: none;
   top: 0;
@@ -406,6 +415,12 @@ md2-datepicker {
 
 .cdk-overlay-container {
   position: fixed;
+  z-index: 1000;
+}
+
+.cdk-global-overlay-wrapper {
+  display: flex;
+  position: absolute;
   z-index: 1000;
 }
 
@@ -428,12 +443,16 @@ md2-datepicker {
   opacity: 0;
 }
 
-.cdk-overlay-transparent-backdrop {
-  background: none;
-}
-
 .cdk-overlay-backdrop.cdk-overlay-backdrop-showing {
   opacity: 0.48;
+}
+
+.cdk-overlay-dark-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.cdk-overlay-transparent-backdrop {
+  background: none;
 }
 
 
